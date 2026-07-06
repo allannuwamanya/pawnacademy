@@ -279,7 +279,25 @@ function Landing() {
   )
 }
 
+function b64url(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/')
+  while (s.length % 4) s += '='
+  return atob(s)
+}
+
 export default function App() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const gs = params.get('gs')
+    if (gs) {
+      try {
+        const data = JSON.parse(b64url(gs))
+        localStorage.setItem('session', JSON.stringify(data))
+        window.history.replaceState({}, '', '/')
+      } catch {}
+    }
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<Landing />} />

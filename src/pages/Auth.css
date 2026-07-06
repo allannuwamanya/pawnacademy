@@ -106,11 +106,26 @@
   text-decoration: underline;
 }
 
+.auth-error {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #ff4444;
+  text-align: center;
+}
+
 .auth-btn {
   width: 100%;
   justify-content: center;
   padding: 13px;
   font-size: 15px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .auth-footer {
@@ -126,4 +141,51 @@
 
 .auth-footer a:hover {
   text-decoration: underline;
+}
+
+.auth-divider {
+  position: relative;
+  margin: 20px 0 4px;
+  text-align: center;
+}
+
+.auth-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.auth-divider span {
+  position: relative;
+  background: var(--bg-card);
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.btn-google-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 12px;
+}
+
+.btn-google-custom:hover {
+  background: #222;
 }
