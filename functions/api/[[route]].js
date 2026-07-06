@@ -148,7 +148,7 @@ export async function onRequest(context) {
 
   if (route === 'auth/callback' && request.method === 'POST') {
     const formData = await request.formData()
-    const credential = formData.get('credential')
+    const credential = formData.get('credential') || formData.get('id_token')
     if (!credential) {
       return new Response('Missing credential', { status: 400 })
     }

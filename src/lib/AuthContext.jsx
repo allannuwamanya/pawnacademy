@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { getSession, clearSession } from './auth'
+import { getSession, clearSession, apiFetch } from './auth'
 
 const AuthContext = createContext(null)
 
@@ -9,8 +9,25 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const session = getSession()
-    setUser(session?.user || null)
-    setLoading(false)
+    if (session?.user) {
+      setUser(session.user)
+      setLoading(false)
+      
+      apiFetch('/profile')
+        .then(data => {
+          setUser(data.user)
+          localStorage.setItem('session', JSON.stringify({ ...session, user: data.user }))
+        })
+        .catch(err => {
+          if (err.message === 'Unauthorized') {
+            clearSession()
+            setUser(null)
+          }
+        })
+    } else {
+      setUser(null)
+      setLoading(false)
+    }
   }, [])
 
   const logout = () => {
