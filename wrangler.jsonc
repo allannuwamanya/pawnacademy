@@ -2,8 +2,5 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pawn-academy",
   "compatibility_date": "2026-07-01",
-  "pages_build_output_dir": "./dist",
-  "vars": {
-    "NEON_DATABASE_URL": "postgresql://neondb_owner:npg_N90HQvopkGtA@ep-little-breeze-ai1pzmv6.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
-  }
+  "pages_build_output_dir": "./dist"
 }
