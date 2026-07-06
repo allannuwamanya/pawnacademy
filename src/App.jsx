@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link, Navigate } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Tactics from './pages/Tactics.jsx'
+import Settings from './pages/Settings.jsx'
+import AppLayout from './components/AppLayout.jsx'
+import { useAuth } from './lib/AuthContext.jsx'
 import './App.css'
 
 const pieces = ['♟', '♞', '♝', '♜', '♛', '♚']
@@ -285,7 +290,35 @@ function b64url(s) {
   return atob(s)
 }
 
+/* Placeholder pages for routes not yet built */
+function PlaceholderPage({ title }) {
+  return (
+    <div style={{ padding: '60px 24px', textAlign: 'center' }}>
+      <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12 }}>{title}</h2>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>This screen is coming soon. Stay tuned!</p>
+    </div>
+  )
+}
+
+/* Wrapper component that passes title to AppLayout and protects the route */
+function AppShell({ title, subtitle }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  return <AppLayout title={title} subtitle={subtitle} />
+}
+
+/* Public route wrapper that redirects logged-in users to /dashboard */
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (user) return <Navigate to="/dashboard" replace />
+  return children
+}
+
 export default function App() {
+  const { setUser } = useAuth()
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const gs = params.get('gs')
@@ -293,16 +326,47 @@ export default function App() {
       try {
         const data = JSON.parse(b64url(gs))
         localStorage.setItem('session', JSON.stringify(data))
+        setUser(data.user)
         window.history.replaceState({}, '', '/')
       } catch {}
     }
-  }, [])
+  }, [setUser])
 
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      {/* Public routes */}
+      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+
+      {/* App routes (with sidebar + topbar) */}
+      <Route element={<AppShell title="Dashboard" />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
+      <Route element={<AppShell title="Tactics Trainer" subtitle="Puzzle #3,847" />}>
+        <Route path="/train/tactics" element={<Tactics />} />
+      </Route>
+      <Route element={<AppShell title="Opening Explorer" />}>
+        <Route path="/train/openings" element={<PlaceholderPage title="Opening Explorer" />} />
+      </Route>
+      <Route element={<AppShell title="Endgame Studies" />}>
+        <Route path="/train/endgames" element={<PlaceholderPage title="Endgame Studies" />} />
+      </Route>
+      <Route element={<AppShell title="Play vs Engine" />}>
+        <Route path="/play" element={<PlaceholderPage title="Play vs Engine" />} />
+      </Route>
+      <Route element={<AppShell title="Analyze a Game" />}>
+        <Route path="/analyze" element={<PlaceholderPage title="Analyze a Game" />} />
+      </Route>
+      <Route element={<AppShell title="Progress" />}>
+        <Route path="/progress" element={<PlaceholderPage title="Progress" />} />
+      </Route>
+      <Route element={<AppShell title="Settings" />}>
+        <Route path="/settings" element={<Settings />} />
+      </Route>
+      <Route element={<AppShell title="Upgrade" />}>
+        <Route path="/pricing" element={<PlaceholderPage title="Upgrade to Pro" />} />
+      </Route>
     </Routes>
   )
 }

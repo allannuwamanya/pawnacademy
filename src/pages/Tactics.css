@@ -1,0 +1,257 @@
+/* ========== TACTICS PAGE ========== */
+.tactics-page {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: calc(100vh - 120px);
+}
+
+/* Board area */
+.tactics-board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.tactics-board-wrapper {
+  border-radius: 12px;
+  transition: box-shadow 0.3s;
+  position: relative;
+}
+
+.tactics-board-wrapper.flash-correct {
+  box-shadow: 0 0 40px rgba(68, 215, 182, 0.3);
+}
+
+.tactics-board-wrapper.flash-wrong {
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
+}
+
+/* Status bar */
+.tactics-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 540px;
+  padding: 12px 0;
+}
+
+.tactics-status-left {
+  flex: 1;
+}
+
+.tactics-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.prompt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.tactics-feedback {
+  font-size: 14px;
+  font-weight: 600;
+  animation: feedbackSlide 0.3s ease;
+}
+
+@keyframes feedbackSlide {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.tactics-feedback.correct { color: #44d7b6; }
+.tactics-feedback.wrong   { color: #ef4444; }
+
+.tactics-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.tactics-ctrl-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tactics-ctrl-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: #2a2a2a;
+}
+
+/* Progress */
+.tactics-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 540px;
+}
+
+.tactics-progress-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.tactics-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent-gold), #e8a824);
+  transition: width 0.4s ease;
+}
+
+.tactics-progress-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tactics-streak {
+  font-size: 12px;
+  color: #f97316;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Right panel */
+.tactics-right-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 120px);
+}
+
+/* Puzzle info */
+.tactics-puzzle-info {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.puzzle-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.puzzle-info-row:last-child { margin-bottom: 0; }
+
+.puzzle-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.puzzle-rating {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.puzzle-theme {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.puzzle-difficulty {
+  font-size: 12px;
+  color: var(--accent-gold);
+  letter-spacing: 1px;
+}
+
+/* Tabs */
+.tactics-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tactics-tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tactics-tab:hover {
+  color: var(--text-secondary);
+}
+
+.tactics-tab.active {
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold);
+}
+
+/* Tab content */
+.tactics-tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .tactics-page {
+    grid-template-columns: 1fr;
+  }
+  .tactics-board-wrapper,
+  .tactics-status,
+  .tactics-progress {
+    width: 100%;
+    max-width: 480px;
+  }
+  .tactics-right-panel {
+    max-height: 500px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tactics-board-area {
+    padding-top: 0;
+  }
+  .tactics-ctrl-btn span {
+    display: none;
+  }
+}
