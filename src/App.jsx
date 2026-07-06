@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
+import Login from './pages/Login.jsx'
+import Signup from './pages/Signup.jsx'
 import './App.css'
 
 const pieces = ['♟', '♞', '♝', '♜', '♛', '♚']
@@ -42,10 +45,10 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-inner">
-        <a href="#" className="logo" onClick={() => setMenuOpen(false)}>
+        <Link to="/" className="logo" onClick={() => setMenuOpen(false)}>
           <span className="logo-icon">♞</span>
           <span className="logo-text">Pawn Academy</span>
-        </a>
+        </Link>
         <button
           className={`hamburger ${menuOpen ? 'open' : ''}`}
           onClick={() => setMenuOpen(!menuOpen)}
@@ -54,10 +57,10 @@ const Navbar = () => {
           <span /><span /><span />
         </button>
         <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-          <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-          <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
-          <a href="#engine" onClick={() => setMenuOpen(false)}>Engine</a>
-          <a href="#cta" className="btn-nav" onClick={() => setMenuOpen(false)}>Get Early Access</a>
+          <a href="/#features" onClick={() => setMenuOpen(false)}>Features</a>
+          <a href="/#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
+          <a href="/#engine" onClick={() => setMenuOpen(false)}>Engine</a>
+          <Link to="/login" className="btn-nav" onClick={() => setMenuOpen(false)}>Sign In</Link>
         </div>
       </div>
     </nav>
@@ -80,7 +83,7 @@ const Hero = () => (
         and analyze every blunder — all powered by the strongest chess engine.
       </p>
       <div className="hero-actions">
-        <a href="#cta" className="btn-primary">Start Training Free</a>
+        <Link to="/signup" className="btn-primary">Start Training Free</Link>
         <a href="#features" className="btn-secondary">Explore Features</a>
       </div>
       <div className="hero-stats">
@@ -102,36 +105,12 @@ const Hero = () => (
 )
 
 const features = [
-  {
-    icon: '♟',
-    title: 'Tactics Trainer',
-    desc: 'Hundreds of curated tactical puzzles with instant feedback. Forks, pins, skewers, sacrifices — master them all.',
-  },
-  {
-    icon: '♜',
-    title: 'Opening Explorer',
-    desc: 'Navigate a massive opening tree with engine evaluations at every node. Learn the why behind every move.',
-  },
-  {
-    icon: '♚',
-    title: 'Endgame Studies',
-    desc: 'From basic checkmates to complex pawn endgames. Interactive tablebase-backed positions with clear explanations.',
-  },
-  {
-    icon: '♛',
-    title: 'Blunder Analysis',
-    desc: 'Upload or play games and get instant blunder detection. See exactly where you lost the advantage and why.',
-  },
-  {
-    icon: '♝',
-    title: 'Engine Play',
-    desc: 'Play against adjustable difficulty levels. From beginner-friendly to grandmaster crushing difficulty.',
-  },
-  {
-    icon: '♞',
-    title: 'Progress Tracking',
-    desc: 'Track your rating, puzzle performance, and opening repertoire. Identify weaknesses and improve systematically.',
-  },
+  { icon: '♟', title: 'Tactics Trainer', desc: 'Hundreds of curated tactical puzzles with instant feedback. Forks, pins, skewers, sacrifices — master them all.' },
+  { icon: '♜', title: 'Opening Explorer', desc: 'Navigate a massive opening tree with engine evaluations at every node. Learn the why behind every move.' },
+  { icon: '♚', title: 'Endgame Studies', desc: 'From basic checkmates to complex pawn endgames. Interactive tablebase-backed positions with clear explanations.' },
+  { icon: '♛', title: 'Blunder Analysis', desc: 'Upload or play games and get instant blunder detection. See exactly where you lost the advantage and why.' },
+  { icon: '♝', title: 'Engine Play', desc: 'Play against adjustable difficulty levels. From beginner-friendly to grandmaster crushing difficulty.' },
+  { icon: '♞', title: 'Progress Tracking', desc: 'Track your rating, puzzle performance, and opening repertoire. Identify weaknesses and improve systematically.' },
 ]
 
 const Features = () => (
@@ -139,9 +118,7 @@ const Features = () => (
     <div className="section-header">
       <span className="section-label">Everything You Need</span>
       <h2 className="section-title">Train Like a Grandmaster</h2>
-      <p className="section-desc">
-        Every tool to take you from beginner to club champion — and beyond.
-      </p>
+      <p className="section-desc">Every tool to take you from beginner to club champion — and beyond.</p>
     </div>
     <div className="features-grid">
       {features.map((f, i) => (
@@ -156,21 +133,9 @@ const Features = () => (
 )
 
 const testimonials = [
-  {
-    quote: "I went from 1200 to 1800 in six months using Pawn Academy's tactics trainer. The instant engine feedback on every puzzle is a game-changer.",
-    name: 'Alex M.',
-    title: 'Club Player',
-  },
-  {
-    quote: 'The opening explorer helped me build a complete repertoire. I finally understand why I\'m playing each move, not just memorizing lines.',
-    name: 'Sarah K.',
-    title: 'Tournament Player',
-  },
-  {
-    quote: 'As a coach, I recommend Pawn Academy to all my students. The blunder analysis feature alone is worth it — it catches things even I miss.',
-    name: 'GM David R.',
-    title: 'Grandmaster & Coach',
-  },
+  { quote: "I went from 1200 to 1800 in six months using Pawn Academy's tactics trainer. The instant engine feedback on every puzzle is a game-changer.", name: 'Alex M.', title: 'Club Player' },
+  { quote: 'The opening explorer helped me build a complete repertoire. I finally understand why I\'m playing each move, not just memorizing lines.', name: 'Sarah K.', title: 'Tournament Player' },
+  { quote: 'As a coach, I recommend Pawn Academy to all my students. The blunder analysis feature alone is worth it — it catches things even I miss.', name: 'GM David R.', title: 'Grandmaster & Coach' },
 ]
 
 const Testimonials = () => (
@@ -178,21 +143,15 @@ const Testimonials = () => (
     <div className="section-header">
       <span className="section-label">Trusted by Players</span>
       <h2 className="section-title">What Our Users Say</h2>
-      <p className="section-desc">
-        Join thousands of players already improving with Pawn Academy.
-      </p>
+      <p className="section-desc">Join thousands of players already improving with Pawn Academy.</p>
     </div>
     <div className="testimonials-grid">
       {testimonials.map((t, i) => (
         <div key={i} className="testimonial-card">
-          <div className="testimonial-stars">
-            {'★'.repeat(5)}
-          </div>
+          <div className="testimonial-stars">{'★'.repeat(5)}</div>
           <p className="testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
           <div className="testimonial-author">
-            <div className="testimonial-avatar">
-              {t.name.charAt(0)}
-            </div>
+            <div className="testimonial-avatar">{t.name.charAt(0)}</div>
             <div>
               <div className="testimonial-name">{t.name}</div>
               <div className="testimonial-title">{t.title}</div>
@@ -205,50 +164,9 @@ const Testimonials = () => (
 )
 
 const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    features: [
-      'Basic tactics puzzles',
-      'Opening explorer (limited)',
-      'Engine analysis (depth 12)',
-      '5 saved games',
-      'Community forum access',
-    ],
-    cta: 'Start Free',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$9',
-    period: '/month',
-    features: [
-      'Unlimited tactics puzzles',
-      'Full opening explorer',
-      'Engine analysis (depth 24)',
-      'Unlimited saved games',
-      'Blunder analysis',
-      'Progress tracking',
-    ],
-    cta: 'Go Pro',
-    highlighted: true,
-  },
-  {
-    name: 'Grandmaster',
-    price: '$19',
-    period: '/month',
-    features: [
-      'Everything in Pro',
-      'Engine analysis (depth 30+)',
-      'Multi-variation analysis (5 lines)',
-      'Syzygy tablebase endgames',
-      'Priority support',
-      'Coaching tools & export',
-    ],
-    cta: 'Go Grandmaster',
-    highlighted: false,
-  },
+  { name: 'Free', price: '$0', period: 'forever', features: ['Basic tactics puzzles', 'Opening explorer (limited)', 'Engine analysis (depth 12)', '5 saved games', 'Community forum access'], cta: 'Start Free', highlighted: false },
+  { name: 'Pro', price: '$9', period: '/month', features: ['Unlimited tactics puzzles', 'Full opening explorer', 'Engine analysis (depth 24)', 'Unlimited saved games', 'Blunder analysis', 'Progress tracking'], cta: 'Go Pro', highlighted: true },
+  { name: 'Grandmaster', price: '$19', period: '/month', features: ['Everything in Pro', 'Engine analysis (depth 30+)', 'Multi-variation analysis (5 lines)', 'Syzygy tablebase endgames', 'Priority support', 'Coaching tools & export'], cta: 'Go Grandmaster', highlighted: false },
 ]
 
 const Pricing = () => (
@@ -256,9 +174,7 @@ const Pricing = () => (
     <div className="section-header">
       <span className="section-label">Simple Pricing</span>
       <h2 className="section-title">Choose Your Plan</h2>
-      <p className="section-desc">
-        Start free. Upgrade when you&apos;re ready to go deeper.
-      </p>
+      <p className="section-desc">Start free. Upgrade when you&apos;re ready to go deeper.</p>
     </div>
     <div className="pricing-grid">
       {plans.map((p, i) => (
@@ -270,15 +186,9 @@ const Pricing = () => (
             <span className="pricing-period">{p.period}</span>
           </div>
           <ul className="pricing-features">
-            {p.features.map((f, j) => (
-              <li key={j}>
-                <span className="check">✓</span> {f}
-              </li>
-            ))}
+            {p.features.map((f, j) => <li key={j}><span className="check">✓</span> {f}</li>)}
           </ul>
-          <a href="#cta" className={p.highlighted ? 'btn-primary pricing-btn' : 'btn-secondary pricing-btn'}>
-            {p.cta}
-          </a>
+          <Link to="/signup" className={p.highlighted ? 'btn-primary pricing-btn' : 'btn-secondary pricing-btn'}>{p.cta}</Link>
         </div>
       ))}
     </div>
@@ -294,8 +204,7 @@ const EngineSection = () => (
           {Array.from({ length: 64 }, (_, i) => {
             const row = Math.floor(i / 8)
             const col = i % 8
-            const dark = (row + col) % 2 === 1
-            return <div key={i} className={`board-square ${dark ? 'dark' : 'light'}`} />
+            return <div key={i} className={`board-square ${(row + col) % 2 === 1 ? 'dark' : 'light'}`} />
           })}
           <div className="engine-overlay">
             <div className="engine-eval">
@@ -308,10 +217,7 @@ const EngineSection = () => (
       <div className="engine-text">
         <span className="section-label">Stockfish 17 Engine</span>
         <h2 className="section-title">World-Class Analysis,<br />Instant Results</h2>
-        <p className="section-desc">
-          The strongest chess engine in the world, running right in your browser.
-          Every move evaluated, every tactic calculated, every plan uncovered.
-        </p>
+        <p className="section-desc">The strongest chess engine in the world, running right in your browser. Every move evaluated, every tactic calculated, every plan uncovered.</p>
         <ul className="engine-features">
           <li><span className="check">✓</span> Multi-variation analysis (up to 5 lines)</li>
           <li><span className="check">✓</span> Adjustable depth (1–30+ ply)</li>
@@ -329,20 +235,10 @@ const CTA = () => (
     <div className="cta-glow" />
     <div className="cta-content">
       <h2 className="cta-title">Ready to Transform Your Game?</h2>
-      <p className="cta-desc">
-        Join thousands of players using Pawn Academy to level up their chess.
-        Free during early access — no credit card required.
-      </p>
+      <p className="cta-desc">Join thousands of players using Pawn Academy to level up their chess. Free during early access — no credit card required.</p>
       <form className="cta-form" onSubmit={(e) => e.preventDefault()}>
-        <input
-          type="email"
-          placeholder="Enter your email"
-          className="cta-input"
-          required
-        />
-        <button type="submit" className="btn-primary cta-btn">
-          Get Early Access
-        </button>
+        <input type="email" placeholder="Enter your email" className="cta-input" required />
+        <button type="submit" className="btn-primary cta-btn">Get Early Access</button>
       </form>
       <p className="cta-note">No spam. Unsubscribe anytime.</p>
     </div>
@@ -361,14 +257,12 @@ const Footer = () => (
         <a href="#">Terms</a>
         <a href="#">Contact</a>
       </div>
-      <p className="footer-copy">
-        &copy; {new Date().getFullYear()} Pawn Academy. All rights reserved.
-      </p>
+      <p className="footer-copy">&copy; {new Date().getFullYear()} Pawn Academy. All rights reserved.</p>
     </div>
   </footer>
 )
 
-export default function App() {
+function Landing() {
   return (
     <>
       <Navbar />
@@ -382,5 +276,15 @@ export default function App() {
       </main>
       <Footer />
     </>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+    </Routes>
   )
 }
