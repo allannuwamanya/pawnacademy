@@ -1,19 +1,30 @@
 import { useState } from 'react'
-import { Chessboard } from 'react-chessboard'
-import { PIECE_SETS, getPreviewPieces, buildCustomPieces } from '../lib/piecesets'
+import ChessgroundBoard from '../components/ChessgroundBoard'
+import { PIECE_SETS, getPreviewPieces } from '../lib/piecesets'
 import { BOARD_THEMES, getThemeById } from '../lib/boardthemes'
+import { usePreferences } from '../lib/PreferencesContext'
 import './Settings.css'
 
-const PREVIEW_FEN = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'
+
 
 export default function Settings() {
-  const [selectedPieceSet, setSelectedPieceSet] = useState('cburnett')
-  const [selectedBoardTheme, setSelectedBoardTheme] = useState('midnight')
+  const { boardThemeId, pieceSetId, setBoardThemeId, setPieceSetId } = usePreferences()
+  const [selectedPieceSet, setSelectedPieceSet]   = useState(pieceSetId)
+  const [selectedBoardTheme, setSelectedBoardTheme] = useState(boardThemeId)
   const [searchPieces, setSearchPieces] = useState('')
 
-  const theme = getThemeById(selectedBoardTheme)
-  const customPieces = buildCustomPieces(selectedPieceSet)
+  const theme        = getThemeById(selectedBoardTheme)
   const previewPieces = getPreviewPieces(selectedPieceSet)
+
+  const handleThemeChange = (id) => {
+    setSelectedBoardTheme(id)
+    setBoardThemeId(id)
+  }
+
+  const handlePieceSetChange = (id) => {
+    setSelectedPieceSet(id)
+    setPieceSetId(id)
+  }
 
   const filteredSets = PIECE_SETS.filter(s =>
     s.name.toLowerCase().includes(searchPieces.toLowerCase()) ||
@@ -31,22 +42,14 @@ export default function Settings() {
           </div>
 
           <div className="settings-board-row">
-            {/* Live Preview */}
             <div className="settings-preview">
               <div className="settings-preview-label">Live Preview</div>
               <div className="settings-preview-board">
-                <Chessboard
-                  id="settings-preview"
-                  position={PREVIEW_FEN}
-                  boardWidth={280}
-                  arePiecesDraggable={false}
-                  customBoardStyle={{
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                  }}
-                  customDarkSquareStyle={theme.dark}
-                  customLightSquareStyle={theme.light}
-                  customPieces={customPieces}
+                <ChessgroundBoard
+                  fen="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+                  viewOnly
+                  pieceSetId={selectedPieceSet}
+                  theme={theme}
                 />
               </div>
             </div>
@@ -59,7 +62,7 @@ export default function Settings() {
                   <button
                     key={bt.id}
                     className={`board-theme-btn ${selectedBoardTheme === bt.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedBoardTheme(bt.id)}
+                    onClick={() => handleThemeChange(bt.id)}
                     title={bt.name}
                   >
                     <div className="board-theme-preview">
@@ -116,7 +119,7 @@ export default function Settings() {
               <button
                 key={ps.id}
                 className={`piece-set-btn ${selectedPieceSet === ps.id ? 'selected' : ''}`}
-                onClick={() => setSelectedPieceSet(ps.id)}
+                onClick={() => handlePieceSetChange(ps.id)}
               >
                 <div className="piece-set-preview">
                   {['wK', 'wQ', 'wN'].map(key => (

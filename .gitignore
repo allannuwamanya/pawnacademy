@@ -29,3 +29,8 @@ dist-ssr
 firebase.json
 firestore.indexes.json
 firestore.rules
+
+# Local Env and Wrangler
+.dev.vars
+.wrangler/
+

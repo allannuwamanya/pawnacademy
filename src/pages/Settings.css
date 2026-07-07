@@ -58,6 +58,12 @@
   letter-spacing: 1px;
 }
 
+.settings-preview-board {
+  width: 280px;
+  height: 280px;
+  max-width: 100%;
+}
+
 /* Board theme grid */
 .board-themes-grid {
   display: grid;

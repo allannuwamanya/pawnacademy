@@ -1,5 +1,5 @@
 const GOOGLE_CLIENT_ID = '310339672720-pkqtq1eok2g9noi56h453fnb7a8l3782.apps.googleusercontent.com'
-const CALLBACK_URL = 'https://pawn-academy.pages.dev/api/auth/callback'
+const CALLBACK_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/auth/callback` : 'https://pawn-academy.pages.dev/api/auth/callback'
 
 export function signInWithGoogle() {
   const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)

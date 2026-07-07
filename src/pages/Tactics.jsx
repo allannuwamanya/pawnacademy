@@ -1,72 +1,53 @@
-import { useState, useMemo, useCallback } from 'react'
-import { Chessboard } from 'react-chessboard'
+import { useState, useCallback } from 'react'
 import { Chess } from 'chess.js'
-import { Lightbulb, SkipForward, FlipVertical, ChevronRight } from 'lucide-react'
+import { Lightbulb, SkipForward, FlipVertical } from 'lucide-react'
+import ChessgroundBoard from '../components/ChessgroundBoard'
 import MoveList from '../components/MoveList'
 import AICoach from '../components/AICoach'
 import { getThemeById } from '../lib/boardthemes'
-import { buildCustomPieces } from '../lib/piecesets'
+import { usePreferences } from '../lib/PreferencesContext'
 import './Tactics.css'
 
 const STARTING_FEN = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4'
 
 export default function Tactics() {
-  const [game, setGame] = useState(new Chess(STARTING_FEN))
-  const [activeTab, setActiveTab] = useState('moves') // 'moves' | 'ai'
-  const [boardThemeId] = useState('midnight')
-  const [pieceSetId] = useState('cburnett')
-  const [puzzleStatus, setPuzzleStatus] = useState(null) // null | 'correct' | 'wrong'
+  const { boardThemeId, pieceSetId } = usePreferences()
+  const [fen, setFen]                 = useState(STARTING_FEN)
+  const [activeTab, setActiveTab]     = useState('moves')
+  const [puzzleStatus, setPuzzleStatus] = useState(null)
   const [boardOrientation, setBoardOrientation] = useState('white')
-  const [puzzleNum] = useState(3847)
+  const [puzzleNum]  = useState(3847)
   const [puzzleRating] = useState(1620)
-  const [progress] = useState({ done: 8, total: 10 })
+  const [progress]   = useState({ done: 8, total: 10 })
 
   const theme = getThemeById(boardThemeId)
-  const customPieces = useMemo(() => buildCustomPieces(pieceSetId), [pieceSetId])
 
-  const onDrop = useCallback((sourceSquare, targetSquare) => {
-    const gameCopy = new Chess(game.fen())
-    try {
-      const result = gameCopy.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q',
-      })
-      if (result === null) return false
-      setGame(gameCopy)
+  // Called by ChessgroundBoard after every legal move
+  const handleMove = useCallback((_from, _to, newFen) => {
+    setFen(newFen)
 
-      // Simulate puzzle feedback
-      if (Math.random() > 0.4) {
-        setPuzzleStatus('correct')
-      } else {
-        setPuzzleStatus('wrong')
-      }
-      setTimeout(() => setPuzzleStatus(null), 2000)
-      return true
-    } catch {
-      return false
-    }
-  }, [game])
+    // Simulate puzzle feedback (replace with real logic later)
+    const status = Math.random() > 0.4 ? 'correct' : 'wrong'
+    setPuzzleStatus(status)
+    setTimeout(() => setPuzzleStatus(null), 2000)
+  }, [])
+
+  // Detect whose turn it is for the status bar
+  const turn = (() => {
+    try { return new Chess(fen).turn() === 'w' ? 'White' : 'Black' } catch { return 'White' }
+  })()
 
   return (
     <div className="tactics-page">
       {/* Board area */}
       <div className="tactics-board-area">
         <div className={`tactics-board-wrapper ${puzzleStatus ? `flash-${puzzleStatus}` : ''}`}>
-          <Chessboard
-            id="tactics-board"
-            position={game.fen()}
-            onPieceDrop={onDrop}
-            boardOrientation={boardOrientation}
-            boardWidth={540}
-            customBoardStyle={{
-              borderRadius: '10px',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-            }}
-            customDarkSquareStyle={theme.dark}
-            customLightSquareStyle={theme.light}
-            customPieces={customPieces}
-            animationDuration={200}
+          <ChessgroundBoard
+            fen={STARTING_FEN}
+            orientation={boardOrientation}
+            onMove={handleMove}
+            pieceSetId={pieceSetId}
+            theme={theme}
           />
         </div>
 
@@ -82,7 +63,7 @@ export default function Tactics() {
             {!puzzleStatus && (
               <span className="tactics-prompt">
                 <span className="prompt-dot" />
-                {game.turn() === 'w' ? 'White' : 'Black'} to move — find the best move!
+                {turn} to move — find the best move!
               </span>
             )}
           </div>
@@ -95,7 +76,11 @@ export default function Tactics() {
               <SkipForward size={16} />
               <span>Skip</span>
             </button>
-            <button className="tactics-ctrl-btn" onClick={() => setBoardOrientation(o => o === 'white' ? 'black' : 'white')} title="Flip board">
+            <button
+              className="tactics-ctrl-btn"
+              onClick={() => setBoardOrientation(o => o === 'white' ? 'black' : 'white')}
+              title="Flip board"
+            >
               <FlipVertical size={16} />
               <span>Flip</span>
             </button>
@@ -105,7 +90,10 @@ export default function Tactics() {
         {/* Progress bar */}
         <div className="tactics-progress">
           <div className="tactics-progress-bar">
-            <div className="tactics-progress-fill" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+            <div
+              className="tactics-progress-fill"
+              style={{ width: `${(progress.done / progress.total) * 100}%` }}
+            />
           </div>
           <span className="tactics-progress-text">{progress.done}/{progress.total} puzzles today</span>
           <span className="tactics-streak">🔥 7-day streak</span>
@@ -114,7 +102,6 @@ export default function Tactics() {
 
       {/* Right panel */}
       <div className="tactics-right-panel">
-        {/* Puzzle info header */}
         <div className="tactics-puzzle-info">
           <div className="puzzle-info-row">
             <span className="puzzle-num">Puzzle #{puzzleNum}</span>
@@ -126,7 +113,6 @@ export default function Tactics() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="tactics-tabs">
           <button
             className={`tactics-tab ${activeTab === 'moves' ? 'active' : ''}`}
@@ -142,12 +128,11 @@ export default function Tactics() {
           </button>
         </div>
 
-        {/* Tab content */}
         <div className="tactics-tab-content">
           {activeTab === 'moves' ? (
             <MoveList />
           ) : (
-            <AICoach fen={game.fen()} />
+            <AICoach fen={fen} />
           )}
         </div>
       </div>
