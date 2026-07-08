@@ -186,6 +186,273 @@ export async function onRequest(context) {
     })
   }
 
+  // ============================================================================
+  // PUZZLE ENDPOINTS
+  // ============================================================================
+
+  // GET /api/puzzles/random - Fetch a random puzzle near user's rating
+  if (route === 'puzzles/random' && request.method === 'GET') {
+    const user = await getAuthUser(request, sql)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    // Get user's puzzle rating (default 1500 if not found)
+    const progressResult = await sql`
+      SELECT current_rating FROM user_puzzle_progress WHERE user_id = ${user.id} LIMIT 1
+    `
+    const userRating = progressResult.length ? progressResult[0].current_rating : 1500
+    
+    // Find puzzles within ±200 rating range that user hasn't solved recently
+    const ratingMin = userRating - 200
+    const ratingMax = userRating + 200
+    
+    const puzzles = await sql`
+      SELECT p.id, p.puzzle_id, p.fen, p.rating, p.themes, p.opening_tags
+      FROM puzzles p
+      WHERE p.rating BETWEEN ${ratingMin} AND ${ratingMax}
+      AND NOT EXISTS (
+        SELECT 1 FROM puzzle_attempts pa
+        WHERE pa.puzzle_id = p.id 
+        AND pa.user_id = ${user.id}
+        AND pa.solved = true
+        AND pa.created_at > NOW() - INTERVAL '7 days'
+      )
+      ORDER BY RANDOM()
+      LIMIT 1
+    `
+    
+    if (!puzzles.length) {
+      // Fallback: return any unsolved puzzle
+      const fallback = await sql`
+        SELECT p.id, p.puzzle_id, p.fen, p.rating, p.themes, p.opening_tags
+        FROM puzzles p
+        WHERE NOT EXISTS (
+          SELECT 1 FROM puzzle_attempts pa
+          WHERE pa.puzzle_id = p.id AND pa.user_id = ${user.id} AND pa.solved = true
+        )
+        ORDER BY RANDOM()
+        LIMIT 1
+      `
+      
+      if (!fallback.length) {
+        return new Response(JSON.stringify({ error: 'No puzzles available' }), { status: 404,
+          headers: { 'Content-Type': 'application/json' } })
+      }
+      
+      return new Response(JSON.stringify({ puzzle: fallback[0] }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    
+    return new Response(JSON.stringify({ puzzle: puzzles[0] }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // GET /api/puzzles/daily - Get today's featured puzzle
+  if (route === 'puzzles/daily' && request.method === 'GET') {
+    const user = await getAuthUser(request, sql)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+    const result = await sql`
+      SELECT p.id, p.puzzle_id, p.fen, p.rating, p.themes, p.opening_tags
+      FROM daily_puzzles dp
+      JOIN puzzles p ON p.id = dp.puzzle_id
+      WHERE dp.date = ${today}
+      LIMIT 1
+    `
+    
+    if (!result.length) {
+      return new Response(JSON.stringify({ error: 'No daily puzzle set' }), { status: 404,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+    
+    // Check if user has already solved it
+    const attempt = await sql`
+      SELECT solved FROM puzzle_attempts
+      WHERE user_id = ${user.id} AND puzzle_id = ${result[0].id}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `
+    
+    return new Response(JSON.stringify({ 
+      puzzle: result[0],
+      alreadySolved: attempt.length > 0 && attempt[0].solved
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // POST /api/puzzles/:id/attempt - Submit a puzzle solution
+  if (route.startsWith('puzzles/') && route.endsWith('/attempt') && request.method === 'POST') {
+    const user = await getAuthUser(request, sql)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const puzzleId = parseInt(route.split('/')[1])
+    if (isNaN(puzzleId)) {
+      return new Response(JSON.stringify({ error: 'Invalid puzzle ID' }), { status: 400,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const body = await request.json()
+    const { moves, timeSpent } = body
+    
+    if (!moves || !Array.isArray(moves)) {
+      return new Response(JSON.stringify({ error: 'Invalid moves format' }), { status: 400,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    // Get the puzzle and its solution
+    const puzzleResult = await sql`
+      SELECT id, moves FROM puzzles WHERE id = ${puzzleId} LIMIT 1
+    `
+    
+    if (!puzzleResult.length) {
+      return new Response(JSON.stringify({ error: 'Puzzle not found' }), { status: 404,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const puzzle = puzzleResult[0]
+    const solutionMoves = puzzle.moves.trim().split(/\s+/)
+    
+    // Validate: user moves should match solution moves
+    // For now, we check if user's moves contain the solution sequence
+    const userMovesStr = moves.join(' ')
+    const solved = solutionMoves.every((solutionMove, idx) => {
+      return moves[idx] === solutionMove
+    }) && moves.length === solutionMoves.length
+
+    // Count previous attempts for this puzzle
+    const attemptCount = await sql`
+      SELECT COUNT(*) as count FROM puzzle_attempts
+      WHERE user_id = ${user.id} AND puzzle_id = ${puzzleId}
+    `
+    const attemptNumber = parseInt(attemptCount[0].count) + 1
+
+    // Record the attempt (triggers will auto-update progress)
+    await sql`
+      INSERT INTO puzzle_attempts (user_id, puzzle_id, solved, time_spent, moves_made, attempt_number)
+      VALUES (${user.id}, ${puzzleId}, ${solved}, ${timeSpent || null}, ${moves}, ${attemptNumber})
+    `
+
+    // Get updated user progress
+    const progress = await sql`
+      SELECT current_rating, total_solved, current_streak, puzzles_today
+      FROM user_puzzle_progress
+      WHERE user_id = ${user.id}
+      LIMIT 1
+    `
+
+    return new Response(JSON.stringify({ 
+      correct: solved,
+      solution: solutionMoves,
+      attemptNumber,
+      progress: progress.length ? progress[0] : null
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // GET /api/puzzles/:id - Get a specific puzzle by ID
+  if (route.startsWith('puzzles/') && request.method === 'GET' && !route.includes('/')) {
+    const user = await getAuthUser(request, sql)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const puzzleId = parseInt(route.split('/')[1])
+    if (isNaN(puzzleId)) {
+      return new Response(JSON.stringify({ error: 'Invalid puzzle ID' }), { status: 400,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const result = await sql`
+      SELECT id, puzzle_id, fen, rating, themes, opening_tags
+      FROM puzzles 
+      WHERE id = ${puzzleId}
+      LIMIT 1
+    `
+    
+    if (!result.length) {
+      return new Response(JSON.stringify({ error: 'Puzzle not found' }), { status: 404,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+    
+    return new Response(JSON.stringify({ puzzle: result[0] }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // GET /api/progress - Get user's puzzle progress and statistics
+  if (route === 'progress' && request.method === 'GET') {
+    const user = await getAuthUser(request, sql)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    // Get or create user progress
+    let progress = await sql`
+      SELECT * FROM user_puzzle_progress WHERE user_id = ${user.id} LIMIT 1
+    `
+    
+    if (!progress.length) {
+      // Create initial progress entry
+      await sql`
+        INSERT INTO user_puzzle_progress (user_id)
+        VALUES (${user.id})
+      `
+      progress = await sql`
+        SELECT * FROM user_puzzle_progress WHERE user_id = ${user.id} LIMIT 1
+      `
+    }
+
+    // Get recent attempt history (last 30 days for chart data)
+    const history = await sql`
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as attempts,
+        SUM(CASE WHEN solved THEN 1 ELSE 0 END) as solved
+      FROM puzzle_attempts
+      WHERE user_id = ${user.id}
+      AND created_at > NOW() - INTERVAL '30 days'
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+    `
+
+    // Get theme breakdown
+    const themeStats = await sql`
+      SELECT 
+        UNNEST(p.themes) as theme,
+        COUNT(*) as attempts,
+        SUM(CASE WHEN pa.solved THEN 1 ELSE 0 END) as solved
+      FROM puzzle_attempts pa
+      JOIN puzzles p ON p.id = pa.puzzle_id
+      WHERE pa.user_id = ${user.id}
+      GROUP BY theme
+      ORDER BY attempts DESC
+      LIMIT 10
+    `
+
+    return new Response(JSON.stringify({ 
+      progress: progress[0],
+      history: history,
+      themeStats: themeStats
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   return new Response(JSON.stringify({ error: 'Not found' }), { status: 404,
     headers: { 'Content-Type': 'application/json' } })
 }

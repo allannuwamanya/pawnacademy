@@ -121,6 +121,9 @@
   justify-content: center;
   padding: 13px;
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .auth-btn:disabled {

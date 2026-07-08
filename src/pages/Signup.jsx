@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { signUp } from '../lib/auth'
 import { signInWithGoogle } from '../lib/google'
 import { useAuth } from '../lib/AuthContext'
+import Spinner from '../components/Spinner'
 import './Auth.css'
 
 export default function Signup() {
@@ -60,7 +61,14 @@ export default function Signup() {
           </label>
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" className="btn-primary auth-btn" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? (
+              <>
+                <Spinner size={16} color="#fff" />
+                Creating account...
+              </>
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
 

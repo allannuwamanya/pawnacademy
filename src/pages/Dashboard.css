@@ -4,6 +4,74 @@
   margin: 0 auto;
 }
 
+/* Loading and error states */
+.dashboard-loading,
+.dashboard-error,
+.dashboard-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.dashboard-loading {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-loading p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.dashboard-error {
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px;
+}
+
+.dashboard-error-message {
+  color: var(--text-primary);
+  font-size: 15px;
+  text-align: center;
+}
+
+.dashboard-empty-content {
+  text-align: center;
+  padding: 60px 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  max-width: 500px;
+}
+
+.dashboard-empty-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.dashboard-empty-content p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Chart empty state */
+.dash-chart-empty,
+.dash-games-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
 /* Stat cards */
 .dash-stats {
   display: grid;

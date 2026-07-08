@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard.jsx'
 import Tactics from './pages/Tactics.jsx'
 import Settings from './pages/Settings.jsx'
 import AppLayout from './components/AppLayout.jsx'
+import NetworkStatus from './components/NetworkStatus.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 import { useAuth } from './lib/AuthContext.jsx'
 import './App.css'
 
@@ -333,40 +335,43 @@ export default function App() {
   }, [setUser])
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+    <ToastProvider>
+      <NetworkStatus />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
-      {/* App routes (with sidebar + topbar) */}
-      <Route element={<AppShell title="Dashboard" />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Route>
-      <Route element={<AppShell title="Tactics Trainer" subtitle="Puzzle #3,847" />}>
-        <Route path="/train/tactics" element={<Tactics />} />
-      </Route>
-      <Route element={<AppShell title="Opening Explorer" />}>
-        <Route path="/train/openings" element={<PlaceholderPage title="Opening Explorer" />} />
-      </Route>
-      <Route element={<AppShell title="Endgame Studies" />}>
-        <Route path="/train/endgames" element={<PlaceholderPage title="Endgame Studies" />} />
-      </Route>
-      <Route element={<AppShell title="Play vs Engine" />}>
-        <Route path="/play" element={<PlaceholderPage title="Play vs Engine" />} />
-      </Route>
-      <Route element={<AppShell title="Analyze a Game" />}>
-        <Route path="/analyze" element={<PlaceholderPage title="Analyze a Game" />} />
-      </Route>
-      <Route element={<AppShell title="Progress" />}>
-        <Route path="/progress" element={<PlaceholderPage title="Progress" />} />
-      </Route>
-      <Route element={<AppShell title="Settings" />}>
-        <Route path="/settings" element={<Settings />} />
-      </Route>
-      <Route element={<AppShell title="Upgrade" />}>
-        <Route path="/pricing" element={<PlaceholderPage title="Upgrade to Pro" />} />
-      </Route>
-    </Routes>
+        {/* App routes (with sidebar + topbar) */}
+        <Route element={<AppShell title="Dashboard" />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+        <Route element={<AppShell title="Tactics Trainer" subtitle="Puzzle #3,847" />}>
+          <Route path="/train/tactics" element={<Tactics />} />
+        </Route>
+        <Route element={<AppShell title="Opening Explorer" />}>
+          <Route path="/train/openings" element={<PlaceholderPage title="Opening Explorer" />} />
+        </Route>
+        <Route element={<AppShell title="Endgame Studies" />}>
+          <Route path="/train/endgames" element={<PlaceholderPage title="Endgame Studies" />} />
+        </Route>
+        <Route element={<AppShell title="Play vs Engine" />}>
+          <Route path="/play" element={<PlaceholderPage title="Play vs Engine" />} />
+        </Route>
+        <Route element={<AppShell title="Analyze a Game" />}>
+          <Route path="/analyze" element={<PlaceholderPage title="Analyze a Game" />} />
+        </Route>
+        <Route element={<AppShell title="Progress" />}>
+          <Route path="/progress" element={<PlaceholderPage title="Progress" />} />
+        </Route>
+        <Route element={<AppShell title="Settings" />}>
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+        <Route element={<AppShell title="Upgrade" />}>
+          <Route path="/pricing" element={<PlaceholderPage title="Upgrade to Pro" />} />
+        </Route>
+      </Routes>
+    </ToastProvider>
   )
 }

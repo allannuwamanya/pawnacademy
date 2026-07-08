@@ -19,6 +19,8 @@ function buildDests(chess) {
   return dests
 }
 
+import { playSound } from '../lib/sounds'
+
 /**
  * chess.js color ('w' | 'b') → chessground color ('white' | 'black')
  */
@@ -101,6 +103,17 @@ export default function ChessgroundBoard({
               check: chess.inCheck(),
             })
 
+            // Play move sound
+            if (isGameOver) {
+              playSound('notify')
+            } else if (chess.inCheck()) {
+              playSound('check')
+            } else if (move.captured || move.flags.includes('c') || move.flags.includes('e')) {
+              playSound('capture')
+            } else {
+              playSound('move')
+            }
+
             onMove?.(orig, dest, chess.fen(), move)
           } catch {
             cgRef.current.set({ fen: chess.fen() })
@@ -121,8 +134,10 @@ export default function ChessgroundBoard({
   useEffect(() => {
     if (!cgRef.current || !fen) return
     try {
+      const oldFen = chessRef.current?.fen()
       const chess = new Chess(fen)
       chessRef.current = chess
+
       cgRef.current.set({
         fen: chess.fen(),
         turnColor: toColor(chess.turn()),
@@ -133,6 +148,28 @@ export default function ChessgroundBoard({
               dests: buildDests(chess),
             },
       })
+
+      // Play sound for parent-initiated move (if not a fresh load / reset)
+      if (oldFen && oldFen !== fen) {
+        const chessOld = new Chess(oldFen)
+        const getPieceCount = c => c.board().flat().filter(Boolean).length
+        const pieceCountOld = getPieceCount(chessOld)
+        const pieceCountNew = getPieceCount(chess)
+
+        // Only play if it looks like a single move (not a clean state reset)
+        const isReset = Math.abs(pieceCountOld - pieceCountNew) > 1 || chess.history().length === 0
+        if (!isReset) {
+          if (chess.isGameOver()) {
+            playSound('notify')
+          } else if (chess.inCheck()) {
+            playSound('check')
+          } else if (pieceCountNew < pieceCountOld) {
+            playSound('capture')
+          } else {
+            playSound('move')
+          }
+        }
+      }
     } catch { /* invalid FEN */ }
   }, [fen, viewOnly])
 

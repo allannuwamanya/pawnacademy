@@ -23,6 +23,22 @@
   color: var(--text-muted);
 }
 
+/* Empty state */
+.movelist-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.movelist-empty p {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
 /* Scrollable area */
 .movelist-scroll {
   flex: 1;
@@ -56,35 +72,24 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Move buttons */
+/* Move display */
 .movelist-move {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 5px 8px;
-  background: none;
-  border: none;
+  background: var(--bg-primary);
   border-radius: 6px;
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.movelist-move:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.movelist-move.selected {
-  background: rgba(240, 192, 64, 0.12);
-  color: var(--text-primary);
 }
 
 .move-text {
   font-variant-numeric: tabular-nums;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
 }
 
 .move-ann {
