@@ -2,24 +2,24 @@
 -- PostgreSQL schema for chess puzzle training platform
 
 -- ============================================================================
--- USERS TABLE (already exists, documented here for reference)
+-- USERS TABLE
 -- ============================================================================
--- CREATE TABLE IF NOT EXISTS users (
---   id SERIAL PRIMARY KEY,
---   firebase_uid VARCHAR(255) UNIQUE NOT NULL,
---   email VARCHAR(255) UNIQUE NOT NULL,
---   display_name VARCHAR(255),
---   avatar_url TEXT,
---   password_hash TEXT,
---   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  firebase_uid VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  display_name VARCHAR(255),
+  avatar_url TEXT,
+  password_hash TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- CREATE TABLE IF NOT EXISTS sessions (
---   id SERIAL PRIMARY KEY,
---   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
---   token VARCHAR(255) UNIQUE NOT NULL,
---   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
+CREATE TABLE IF NOT EXISTS sessions (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================================================
 -- PUZZLES TABLE

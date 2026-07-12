@@ -33,4 +33,9 @@ firestore.rules
 # Local Env and Wrangler
 .dev.vars
 .wrangler/
+wrangler.log
+wrangler.err
+
+# Test coverage
+coverage/
 

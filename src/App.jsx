@@ -5,6 +5,7 @@ import Signup from './pages/Signup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Tactics from './pages/Tactics.jsx'
 import Settings from './pages/Settings.jsx'
+import PlayEngine from './pages/PlayEngine.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import NetworkStatus from './components/NetworkStatus.jsx'
 import { ToastProvider } from './components/Toast.jsx'
@@ -356,8 +357,8 @@ export default function App() {
         <Route element={<AppShell title="Endgame Studies" />}>
           <Route path="/train/endgames" element={<PlaceholderPage title="Endgame Studies" />} />
         </Route>
-        <Route element={<AppShell title="Play vs Engine" />}>
-          <Route path="/play" element={<PlaceholderPage title="Play vs Engine" />} />
+        <Route element={<AppShell title="Play vs Engine" subtitle="Stockfish 18" />}>
+          <Route path="/play" element={<PlayEngine />} />
         </Route>
         <Route element={<AppShell title="Analyze a Game" />}>
           <Route path="/analyze" element={<PlaceholderPage title="Analyze a Game" />} />
