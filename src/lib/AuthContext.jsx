@@ -12,7 +12,6 @@ export function AuthProvider({ children }) {
     if (session?.user) {
       setUser(session.user)
       setLoading(false)
-      
       apiFetch('/profile')
         .then(data => {
           setUser(data.user)

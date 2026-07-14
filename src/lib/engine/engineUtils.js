@@ -12,7 +12,7 @@ export function parseEval(infoStr) {
 export function parseBestMove(line) {
   const match = line.match(/^bestmove (\S+)/)
   if (!match) return null
-  const result = { best: match[1] }
+  const result = { best: match[1], ponder: undefined }
   const ponder = line.match(/ponder (\S+)/)
   if (ponder) result.ponder = ponder[1]
   return result

@@ -11,9 +11,17 @@ function generateToken() {
   return crypto.randomUUID() + '-' + crypto.randomUUID()
 }
 
+// Simple in-memory cache for Google certs to avoid fetching on every request
+let _googleCertsCache = { keys: null, fetchedAt: 0, ttl: 60 * 60 * 1000 }
 async function getGooglePublicKeys() {
+  const now = Date.now()
+  if (_googleCertsCache.keys && (now - _googleCertsCache.fetchedAt) < _googleCertsCache.ttl) {
+    return _googleCertsCache.keys
+  }
   const resp = await fetch('https://www.googleapis.com/oauth2/v3/certs')
-  return resp.json()
+  const data = await resp.json()
+  _googleCertsCache = { keys: data, fetchedAt: now, ttl: 60 * 60 * 1000 }
+  return data
 }
 
 function base64UrlDecode(str) {
@@ -49,7 +57,8 @@ async function verifyGoogleIdToken(idToken, clientId) {
 
 async function createSession(sql, userId) {
   const token = generateToken()
-  await sql`INSERT INTO sessions (user_id, token) VALUES (${userId}, ${token})`
+  // Set an expiry 30 days from creation
+  await sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${userId}, ${token}, NOW() + INTERVAL '30 days')`
   return token
 }
 
@@ -57,7 +66,17 @@ async function getAuthUser(request, sql) {
   const auth = request.headers.get('Authorization')
   if (!auth?.startsWith('Bearer ')) return null
   const token = auth.slice(7)
-  const result = await sql`SELECT user_id FROM sessions WHERE token = ${token} LIMIT 1`
+  // Only accept sessions created within the last 30 days
+  // Prefer explicit expires_at when available, fall back to created_at window
+  const result = await sql`
+    SELECT user_id FROM sessions
+    WHERE token = ${token}
+    AND (
+      (expires_at IS NOT NULL AND expires_at > NOW())
+      OR (expires_at IS NULL AND created_at > NOW() - INTERVAL '30 days')
+    )
+    LIMIT 1
+  `
   if (!result.length) return null
   const user = await sql`SELECT id, email, display_name, avatar_url, created_at FROM users WHERE id = ${result[0].user_id} LIMIT 1`
   return user[0] || null
@@ -122,6 +141,17 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ user, token }), {
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  // POST /api/auth/logout - revoke current session token
+  if (route === 'auth/logout' && request.method === 'POST') {
+    const auth = request.headers.get('Authorization')
+    if (!auth?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing token' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+    }
+    const token = auth.slice(7)
+    await sql`DELETE FROM sessions WHERE token = ${token}`
+    return new Response(null, { status: 204 })
   }
 
   if (route === 'auth/google' && request.method === 'POST') {
@@ -311,6 +341,15 @@ export async function onRequest(context) {
         headers: { 'Content-Type': 'application/json' } })
     }
 
+    // Validate move format (simple UCI move pattern, allow promotion piece)
+    const uciRe = /^[a-h][1-8][a-h][1-8][qrbn]?$/
+    if (!moves.every(m => typeof m === 'string' && uciRe.test(m.trim()))) {
+      return new Response(JSON.stringify({ error: 'Invalid move values' }), { status: 400,
+        headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const normalizedMoves = moves.map(m => m.trim())
+
     // Get the puzzle and its solution
     const puzzleResult = await sql`
       SELECT id, moves FROM puzzles WHERE id = ${puzzleId} LIMIT 1
@@ -328,8 +367,8 @@ export async function onRequest(context) {
     // For now, we check if user's moves contain the solution sequence
     const userMovesStr = moves.join(' ')
     const solved = solutionMoves.every((solutionMove, idx) => {
-      return moves[idx] === solutionMove
-    }) && moves.length === solutionMoves.length
+      return normalizedMoves[idx] === solutionMove
+    }) && normalizedMoves.length === solutionMoves.length
 
     // Count previous attempts for this puzzle
     const attemptCount = await sql`
@@ -341,7 +380,7 @@ export async function onRequest(context) {
     // Record the attempt (triggers will auto-update progress)
     await sql`
       INSERT INTO puzzle_attempts (user_id, puzzle_id, solved, time_spent, moves_made, attempt_number)
-      VALUES (${user.id}, ${puzzleId}, ${solved}, ${timeSpent || null}, ${moves}, ${attemptNumber})
+      VALUES (${user.id}, ${puzzleId}, ${solved}, ${timeSpent || null}, ${normalizedMoves}, ${attemptNumber})
     `
 
     // Get updated user progress

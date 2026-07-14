@@ -70,6 +70,42 @@ export function clearSession() {
 
 export async function apiFetch(path, options = {}) {
   const session = getSession()
+
+  // Dev Bypass Mock Interception
+  if (session?.token === 'local-dev-bypass-token') {
+    if (path === '/profile') {
+      return { user: session.user }
+    }
+    if (path === '/progress') {
+      return {
+        progress: {
+          current_rating: 1500,
+          total_solved: 42,
+          puzzles_today: 5,
+          total_attempts: 50,
+          current_streak: 3,
+          longest_streak: 7
+        },
+        history: [
+          { date: new Date().toISOString(), attempts: 5, solved: 4 }
+        ]
+      }
+    }
+    if (path === '/puzzles/random') {
+      return {
+        puzzle: {
+          id: 'mock-1',
+          puzzle_id: '00001',
+          fen: 'r1bq1rk1/1pp1bppp/p1np1n2/4p3/2B1P3/2NP1N2/PPP2PPP/R1BQR1K1 w - - 0 1',
+          rating: 1500,
+          themes: ['mock', 'tactics'],
+          opening_tags: ['mock opening']
+        }
+      }
+    }
+    return {}
+  }
+
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   if (session?.token) {
     headers['Authorization'] = `Bearer ${session.token}`

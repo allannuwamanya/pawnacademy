@@ -65,9 +65,9 @@ const Navbar = () => {
           <span /><span /><span />
         </button>
         <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-          <a href="/#features" onClick={() => setMenuOpen(false)}>Features</a>
-          <a href="/#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
-          <a href="/#engine" onClick={() => setMenuOpen(false)}>Engine</a>
+          <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+          <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
+          <a href="#engine" onClick={() => setMenuOpen(false)}>Engine</a>
           <Link to="/login" className="btn-nav" onClick={() => setMenuOpen(false)}>Sign In</Link>
         </div>
       </div>

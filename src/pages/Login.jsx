@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { signIn } from '../lib/auth'
+import { signIn, signUp } from '../lib/auth'
 import { signInWithGoogle } from '../lib/google'
 import { useAuth } from '../lib/AuthContext'
 import Spinner from '../components/Spinner'
@@ -27,6 +27,29 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGuestLogin = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    
+    // Completely bypass backend for local dev
+    const mockSession = {
+      user: {
+        id: 'local-guest-id',
+        email: 'guest@pawnacademy.local',
+        display_name: 'Guest Player',
+        avatar_url: null
+      },
+      token: 'local-dev-bypass-token'
+    }
+    
+    // Save to localStorage just like real auth does
+    localStorage.setItem('session', JSON.stringify(mockSession))
+    setUser(mockSession.user)
+    navigate('/')
+    setLoading(false)
   }
 
   return (
@@ -73,6 +96,10 @@ export default function Login() {
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
           Login with Google
+        </button>
+
+        <button onClick={handleGuestLogin} className="btn-primary auth-btn" style={{ marginTop: '12px', backgroundColor: '#555', color: '#fff', border: 'none' }} disabled={loading}>
+          {loading ? 'Logging in...' : 'Local Dev Bypass (Guest)'}
         </button>
 
         <p className="auth-footer">

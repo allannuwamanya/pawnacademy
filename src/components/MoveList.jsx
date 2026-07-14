@@ -4,11 +4,12 @@ import './MoveList.css'
  * Convert UCI moves to human-readable format
  * This is a simple version - for production, use a full PGN parser
  */
-function formatUciMove(uci) {
-  if (!uci) return ''
-  // Just show the UCI notation for now (e.g., "e2e4")
-  // In production, you'd convert this to SAN notation (e.g., "e4")
-  return uci
+function formatUciMove(move) {
+  if (!move) return ''
+  if (typeof move === 'string') return move
+  if (move.san) return move.san
+  if (move.from && move.to) return move.from + move.to
+  return ''
 }
 
 export default function MoveList({ moves = [] }) {

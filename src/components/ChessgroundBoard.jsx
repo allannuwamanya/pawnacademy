@@ -47,21 +47,25 @@ export default function ChessgroundBoard({
   theme,
   style,
 }) {
-  const wrapRef  = useRef(null)
-  const cgRef    = useRef(null)
-  const chessRef = useRef(null)
+  const wrapRef   = useRef(null)
+  const cgRef      = useRef(null)
+  const chessRef   = useRef(null)
+  // Always keep a ref to the latest onMove so the chessground event
+  // handler (captured at mount) always calls the current version.
+  const onMoveRef  = useRef(onMove)
+  useEffect(() => { onMoveRef.current = onMove })
 
   // ── Mount / unmount ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!wrapRef.current) return
 
-    const chess = new Chess(fen || undefined)
+    const safeFen = (fen === 'start' || fen === 'initial') ? undefined : (fen || undefined)
+    const chess = new Chess(safeFen)
     chessRef.current = chess
 
     cgRef.current = Chessground(wrapRef.current, {
       fen: chess.fen(),
       orientation,
-      viewOnly,
       coordinates: true,
       movable: viewOnly
         ? { free: false, color: undefined }
@@ -114,7 +118,7 @@ export default function ChessgroundBoard({
               playSound('move')
             }
 
-            onMove?.(orig, dest, chess.fen(), move)
+            onMoveRef.current?.(orig, dest, chess.fen(), move)
           } catch {
             cgRef.current.set({ fen: chess.fen() })
           }
@@ -135,19 +139,25 @@ export default function ChessgroundBoard({
     if (!cgRef.current || !fen) return
     try {
       const oldFen = chessRef.current?.fen()
-      const chess = new Chess(fen)
+      const safeFen = (fen === 'start' || fen === 'initial') ? undefined : fen
+      const chess = new Chess(safeFen)
       chessRef.current = chess
 
-      cgRef.current.set({
+      const newState = {
         fen: chess.fen(),
         turnColor: toColor(chess.turn()),
+        draggable: { enabled: !viewOnly },
+        selectable: { enabled: !viewOnly },
         movable: viewOnly
-          ? { color: undefined }
+          ? { free: false, color: undefined }
           : {
+              free: false,
               color: toColor(chess.turn()),
               dests: buildDests(chess),
             },
-      })
+      }
+      console.log('Chessground updating state:', newState)
+      cgRef.current.set(newState)
 
       // Play sound for parent-initiated move (if not a fresh load / reset)
       if (oldFen && oldFen !== fen) {
@@ -194,7 +204,7 @@ export default function ChessgroundBoard({
       className="cg-wrap"
       style={{
         width: '100%',
-        aspectRatio: '1 / 1',
+        height: '100%',
         ...style,
       }}
     />

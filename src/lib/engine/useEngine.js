@@ -1,168 +1,147 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { ENGINE_FLAVORS } from './constants'
-import { parseBestMove, parseSearchInfo, formatMoveUCI } from './engineUtils'
 
-const UCI_COMMANDS = {
-  UCI: 'uci',
-  IS_READY: 'isready',
-  UCINEWGAME: 'ucinewgame',
-  STOP: 'stop',
-  QUIT: 'quit',
-}
-
+/**
+ * A pure-ref Stockfish hook. Zero React state is used for engine communication,
+ * so there are no stale closure bugs or async batching issues.
+ *
+ * Usage:
+ *   const engine = useEngine()
+ *   await engine.init()
+ *   const move = await engine.getBestMove(fen, { depth: 8 })
+ */
 export function useEngine(flavor = ENGINE_FLAVORS.LITE_SINGLE) {
-  const [status, setStatus] = useState('idle')
-  const [bestMove, setBestMove] = useState(null)
-  const [searchInfo, setSearchInfo] = useState(null)
-  const [error, setError] = useState(null)
-  const workerRef = useRef(null)
-  const readyRef = useRef(false)
-  const resolveRef = useRef(null)
+  const workerRef     = useRef(null)
+  const readyRef      = useRef(false)
+  const resolveReady  = useRef(null)
+  const resolveMove   = useRef(null)
 
-  const sendCommand = useCallback((cmd) => {
+  // ── Send a raw UCI string to the worker ──────────────────────────────────
+  const send = useCallback((cmd) => {
     if (workerRef.current) {
       workerRef.current.postMessage(cmd)
     }
   }, [])
 
-  const handleWorkerMessage = useCallback((e) => {
-    const line = e.data
-    if (!line || typeof line !== 'string') return
+  // ── Handle every line the worker emits ───────────────────────────────────
+  const onMessage = useCallback((e) => {
+    const line = typeof e.data === 'string' ? e.data.trim() : null
+    if (!line) return
+
+    if (line === 'uciok') {
+      send('isready')
+      return
+    }
 
     if (line === 'readyok') {
       readyRef.current = true
-      setStatus('ready')
-      if (resolveRef.current) {
-        resolveRef.current()
-        resolveRef.current = null
-      }
-      return
-    }
-
-    if (line === 'uciok') {
-      sendCommand(UCI_COMMANDS.IS_READY)
-      return
-    }
-
-    if (line.startsWith('info')) {
-      const parsed = parseSearchInfo(line)
-      if (parsed) setSearchInfo(parsed)
+      const r = resolveReady.current
+      if (r) { resolveReady.current = null; r() }
       return
     }
 
     if (line.startsWith('bestmove')) {
-      const parsed = parseBestMove(line)
-      if (parsed) setBestMove(parsed.best)
+      // bestmove e2e4 ponder e7e5   OR   bestmove (none)
+      const parts = line.split(' ')
+      const move  = parts[1] && parts[1] !== '(none)' ? parts[1] : null
+      const r = resolveMove.current
+      if (r) { resolveMove.current = null; r(move) }
       return
     }
-  }, [sendCommand])
+  }, [send])
 
+  // ── Initialize / restart the engine ──────────────────────────────────────
   const init = useCallback(() => {
+    // Kill existing worker
     if (workerRef.current) {
-      sendCommand(UCI_COMMANDS.QUIT)
-      workerRef.current.terminate()
-    }
-
-    setStatus('loading')
-    setBestMove(null)
-    setSearchInfo(null)
-    setError(null)
-    readyRef.current = false
-
-    const wasmPath = flavor.wasm
-    const url = `${flavor.js}#${encodeURIComponent(wasmPath)},worker`
-
-    try {
-      const worker = new Worker(url)
-      workerRef.current = worker
-      worker.onmessage = handleWorkerMessage
-      worker.onerror = (err) => {
-        setError(err.message || 'Engine failed to load')
-        setStatus('error')
-      }
-      sendCommand(UCI_COMMANDS.UCI)
-    } catch (err) {
-      setError(err.message)
-      setStatus('error')
-    }
-  }, [flavor, sendCommand, handleWorkerMessage])
-
-  const waitForReady = useCallback(() => {
-    if (readyRef.current) return Promise.resolve()
-    return new Promise((resolve) => {
-      resolveRef.current = resolve
-      sendCommand(UCI_COMMANDS.IS_READY)
-    })
-  }, [sendCommand])
-
-  const setPosition = useCallback(async (fen, moves = []) => {
-    await waitForReady()
-    if (fen) {
-      sendCommand(`position fen ${fen}${moves.length ? ` moves ${moves.join(' ')}` : ''}`)
-    } else {
-      sendCommand(`position startpos${moves.length ? ` moves ${moves.join(' ')}` : ''}`)
-    }
-  }, [sendCommand, waitForReady])
-
-  const startSearch = useCallback(({ depth, movetime, wtime, btime, winc, binc, movestogo } = {}) => {
-    const parts = ['go']
-    if (depth) parts.push(`depth ${depth}`)
-    if (movetime) parts.push(`movetime ${movetime}`)
-    if (wtime) parts.push(`wtime ${wtime}`)
-    if (btime) parts.push(`btime ${btime}`)
-    if (winc) parts.push(`winc ${winc}`)
-    if (binc) parts.push(`binc ${binc}`)
-    if (movestogo) parts.push(`movestogo ${movestogo}`)
-    if (!depth && !movetime && !wtime) parts.push('depth 8')
-    sendCommand(parts.join(' '))
-  }, [sendCommand])
-
-  const stopSearch = useCallback(() => {
-    sendCommand(UCI_COMMANDS.STOP)
-  }, [sendCommand])
-
-  const getBestMove = useCallback(async (fen, moves = [], options = {}) => {
-    setBestMove(null)
-    setSearchInfo(null)
-    await setPosition(fen, moves)
-    startSearch(options)
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (bestMove !== null) {
-          clearInterval(checkInterval)
-          resolve(bestMove)
-        }
-      }, 50)
-      setTimeout(() => {
-        clearInterval(checkInterval)
-        stopSearch()
-        setTimeout(() => {
-          if (bestMove) resolve(bestMove)
-          else resolve(null)
-        }, 100)
-      }, options.timeout || 10000)
-    })
-  }, [setPosition, startSearch, stopSearch, bestMove])
-
-  const setOption = useCallback((name, value) => {
-    sendCommand(`setoption name ${name} value ${value}`)
-  }, [sendCommand])
-
-  const setSkillLevel = useCallback((elo) => {
-    sendCommand(`setoption name UCI_LimitStrength value true`)
-    sendCommand(`setoption name UCI_Elo value ${elo}`)
-  }, [sendCommand])
-
-  const destroy = useCallback(() => {
-    if (workerRef.current) {
-      sendCommand(UCI_COMMANDS.QUIT)
       workerRef.current.terminate()
       workerRef.current = null
     }
-    readyRef.current = false
-    setStatus('idle')
-  }, [sendCommand])
+    readyRef.current   = false
+    resolveReady.current = null
+    resolveMove.current  = null
 
+    const url = `${flavor.js}#${encodeURIComponent(flavor.wasm)},worker`
+    const worker = new Worker(url)
+    worker.onmessage = onMessage
+    worker.onerror   = (err) => console.error('[Engine] Worker error:', err)
+    workerRef.current = worker
+
+    // Kick off UCI handshake
+    send('uci')
+
+    // Return a promise that resolves once the engine says readyok
+    return new Promise((resolve) => {
+      resolveReady.current = resolve
+    })
+  }, [flavor, send, onMessage])
+
+  // ── Wait until readyok (re-usable) ───────────────────────────────────────
+  const waitReady = useCallback(() => {
+    if (readyRef.current) return Promise.resolve()
+    return new Promise((resolve) => {
+      resolveReady.current = resolve
+      send('isready')
+    })
+  }, [send])
+
+  // ── Set skill level (UCI_Elo) ─────────────────────────────────────────────
+  const setSkillLevel = useCallback((elo) => {
+    send(`setoption name UCI_LimitStrength value true`)
+    send(`setoption name UCI_Elo value ${elo}`)
+  }, [send])
+
+  // ── Get the best move for a position ─────────────────────────────────────
+  /**
+   * @param {string} fen     - FEN string
+   * @param {object} opts    - { depth?, movetime?, elo? }
+   * @returns {Promise<string|null>}  UCI move string e.g. "e2e4"
+   */
+  const getBestMove = useCallback(async (fen, opts = {}) => {
+    await waitReady()
+
+    // Cancel any previous pending move promise
+    if (resolveMove.current) { resolveMove.current(null); resolveMove.current = null }
+
+    // Set skill if requested
+    if (opts.elo) {
+      send(`setoption name UCI_LimitStrength value true`)
+      send(`setoption name UCI_Elo value ${opts.elo}`)
+    }
+
+    // Tell engine the position
+    send(`position fen ${fen}`)
+
+    // Build go command
+    const parts = ['go']
+    if (opts.depth)    parts.push(`depth ${opts.depth}`)
+    if (opts.movetime) parts.push(`movetime ${opts.movetime}`)
+    // Default: depth 8 (fast, ~50ms)
+    if (!opts.depth && !opts.movetime) parts.push('depth 8')
+    send(parts.join(' '))
+
+    return new Promise((resolve) => {
+      resolveMove.current = resolve
+
+      // Safety timeout: stop and collect whatever we have
+      const ms = opts.movetime ? opts.movetime + 2000 : 15000
+      setTimeout(() => {
+        if (resolveMove.current) {
+          send('stop')
+          // bestmove will fire after stop; resolver will catch it.
+          // Add an extra hard-kill just in case engine is totally stuck.
+          setTimeout(() => {
+            if (resolveMove.current) {
+              resolveMove.current(null)
+              resolveMove.current = null
+            }
+          }, 1000)
+        }
+      }, ms)
+    })
+  }, [send, waitReady])
+
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (workerRef.current) {
@@ -172,20 +151,5 @@ export function useEngine(flavor = ENGINE_FLAVORS.LITE_SINGLE) {
     }
   }, [])
 
-  return {
-    status,
-    bestMove,
-    searchInfo,
-    error,
-    init,
-    sendCommand,
-    setPosition,
-    startSearch,
-    stopSearch,
-    getBestMove,
-    setOption,
-    setSkillLevel,
-    waitForReady,
-    destroy,
-  }
+  return { init, getBestMove, setSkillLevel, send }
 }
