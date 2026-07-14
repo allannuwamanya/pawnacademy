@@ -1,16 +1,54 @@
-# React + Vite
+## Pawn Academy
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Pawn Academy is a browser-first chess training platform built with React + Vite. It includes tactics training, an opening explorer, endgame studies, and an in-browser Stockfish engine for analysis and play.
 
-Currently, two official plugins are available:
+**Quick start**
+- **Prerequisites:** Node.js (16+), npm, and access to a PostgreSQL-compatible database (Neon recommended). Set `NEON_DATABASE_URL` in your environment.
+- Install and run locally:
+	```bash
+	npm install
+	npm run db:migrate   # apply DB schema (needs NEON_DATABASE_URL)
+	npm run dev
+	```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Scripts** (from `package.json`)
+- `dev` — start Vite dev server
+- `build` — production build
+- `preview` — preview build
+- `lint` — run `oxlint` rules
+- `test` / `test:watch` — run Vitest
+- `db:migrate` — apply `database/schema.sql`
 
-## React Compiler
+**Project layout**
+- `src/` — React app and components
+- `public/stockfish` — Stockfish JS/WASM builds
+- `src/lib/engine` — engine utilities & wrapper
+- `functions/` — serverless API routes (Neon DB)
+- `database/schema.sql` — schema and seeds
+- `database/migrate.js` — simple migration helper
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Important notes**
+- Engine hosting: multithreaded WASM builds require COOP/COEP headers. Ensure your hosting adds the following headers if using the multithreaded WASM files:
 
-## Expanding the Oxlint configuration
+	Cross-Origin-Opener-Policy: same-origin
+	Cross-Origin-Embedder-Policy: require-corp
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+	If you cannot add these headers, use the single-threaded JS/WASM fallback in `public/stockfish`.
+
+- Authentication: password hashes use PBKDF2 and sessions are stored in `sessions` with an expiry. See `functions/api/[[route]].js` for implementation and `database/schema.sql` for schema.
+
+- Google OAuth: public keys are fetched and cached in the API layer; for high-scale deployments consider a persistent or shared cache.
+
+**Testing & CI**
+- Run tests locally: `npm test`.
+- Recommended CI: run `npm ci`, `npm test`, and `npm run lint` on PRs.
+
+**Contributing**
+- Create a feature branch, run tests and lint before opening a PR. Please add unit tests for any new engine parsing or API behavior.
+
+**Where to look next**
+- `src/lib/engine/engineUtils.js` — parsing helpers (covered by unit tests)
+- `functions/api/[[route]].js` — serverless API and auth flows
+- `database/schema.sql` — DB schema and seeds
+
+If you'd like, I can add a CI workflow, add COOP/COEP header examples for common hosts, or expand the README with deployment instructions.
